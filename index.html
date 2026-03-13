@@ -1,1 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audience Builder — Compass Method</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
 
+  <style>
+    :root {
+      --ink: #1a1612;
+      --paper: #f5f0e8;
+      --warm: #e8dfd0;
+      --accent: #8b4513;
+      --accent-light: #c4845a;
+      --muted: #7a6e63;
+      --rule: #d4c9b8;
+      --card-bg: #faf7f2;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Subtle grain texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 60px 32px 100px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 56px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      font-weight: 300;
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      margin-bottom: 20px;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-size: 1.15rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* Form sections */
+    .section {
+      margin-bottom: 44px;
+    }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .section-question {
+      font-size: 1.35rem;
+      font-weight: 400;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .section-hint {
+      font-size: 0.95rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      padding: 16px 18px;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 1.05rem;
+      color: var(--ink);
+      resize: vertical;
+      min-height: 110px;
+      line-height: 1.65;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: var(--accent-light);
+    }
+
+    textarea::placeholder {
+      color: #b5a99a;
+      font-style: italic;
+    }
+
+    /* Photo upload */
+    .upload-zone {
+      border: 1px dashed var(--rule);
+      border-radius: 3px;
+      background: var(--card-bg);
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--accent-light);
+      background: #fdf9f4;
+    }
+
+    .upload-zone.has-files {
+      border-color: var(--accent-light);
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-icon {
+      font-size: 1.6rem;
+      margin-bottom: 10px;
+      opacity: 0.5;
+    }
+
+    .upload-text {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .file-previews {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .preview-thumb {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: 2px;
+      border: 1px solid var(--rule);
+    }
+
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--rule);
+      margin: 48px 0;
+    }
+
+    /* Submit */
+    .submit-wrap {
+      text-align: center;
+    }
+
+    .btn-generate {
+      background: var(--ink);
+      color: var(--paper);
+      border: none;
+      padding: 18px 52px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn-generate:hover:not(:disabled) {
+      background: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .btn-generate:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .submit-note {
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-top: 14px;
+    }
+
+    /* Loading */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 60px 0;
+    }
+
+    .loading.active { display: block; }
+
+    .loading-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .loading-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+
+    .loading-message {
+      font-size: 1.1rem;
+      font-style: italic;
+      color: var(--muted);
+    }
+
+    /* Results */
+    .results {
+      display: none;
+      animation: fadeIn 0.6s ease;
+    }
+
+    .results.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .results-header {
+      text-align: center;
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .results-header h2 {
+      font-size: 2rem;
+      font-weight: 300;
+      margin-bottom: 8px;
+    }
+
+    .results-header p {
+      font-size: 1rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* Profile card */
+    .profile-card {
+      background: var(--card-bg);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      padding: 36px;
+      margin-bottom: 36px;
+      position: relative;
+    }
+
+    .profile-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px 0 0 3px;
+    }
+
+    .profile-name {
+      font-size: 2.2rem;
+      font-weight: 300;
+      font-style: italic;
+      margin-bottom: 4px;
+    }
+
+    .profile-tagline {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 560px) {
+      .profile-grid { grid-template-columns: 1fr; }
+    }
+
+    .profile-field label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .profile-field p {
+      font-size: 1rem;
+      line-height: 1.55;
+      color: var(--ink);
+    }
+
+    /* Narrative section */
+    .narrative-block {
+      margin-bottom: 36px;
+    }
+
+    .block-heading {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .block-heading::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--rule);
+    }
+
+    .narrative-text {
+      font-size: 1.12rem;
+      line-height: 1.85;
+      color: var(--ink);
+    }
+
+    .narrative-text p {
+      margin-bottom: 1.2em;
+    }
+
+    .narrative-text p:last-child { margin-bottom: 0; }
+
+    /* Jobs list */
+    .jobs-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .jobs-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    .jobs-list li::before {
+      content: '—';
+      color: var(--accent);
+      font-family: 'DM Mono', monospace;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Where to find them */
+    .find-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+    }
+
+    .find-item {
+      background: var(--card-bg);
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      padding: 14px 16px;
+    }
+
+    .find-item label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .find-item p {
+      font-size: 0.97rem;
+      line-height: 1.5;
+      color: var(--ink);
+    }
+
+    /* Reset button */
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--rule);
+      color: var(--muted);
+      padding: 14px 36px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.2s;
+      margin-top: 48px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .btn-reset:hover {
+      border-color: var(--accent-light);
+      color: var(--accent);
+    }
+
+    /* Error */
+    .error-msg {
+      background: #fdf0ec;
+      border: 1px solid #e8b4a0;
+      border-radius: 3px;
+      padding: 16px 20px;
+      font-size: 1rem;
+      color: #8b3a1a;
+      margin-top: 20px;
+      display: none;
+    }
+
+    .error-msg.active { display: block; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="eyebrow">Compass Method — Strategy Tools</div>
+    <h1>Your <em>Smallest</em><br>Viable Audience</h1>
+    <p class="subtitle">The people who will find the most meaning in your work already exist. This tool helps you see them clearly — so you can stop making music for everyone and start making it for someone.</p>
+  </div>
+
+  <!-- Form -->
+  <div id="form-section">
+
+    <div class="section">
+      <div class="section-label">01 — Your Music</div>
+      <div class="section-question">What is your music about? Describe the feeling, themes, and emotional world of your work.</div>
+      <div class="section-hint">Don't worry about genre labels. Think about what it feels like from the inside — the mood, the ache, the energy.</div>
+      <textarea id="q-music" placeholder="My music tends to live in a space between..."></textarea>
+    </div>
+
+    <div class="section">
+      <div class="section-label">02 — Your Instinct</div>
+      <div class="section-question">Who do you already sense your music is for? Even a vague feeling counts.</div>
+      <div class="section-hint">Maybe it's a type of person, a feeling they carry, a situation they're in. Trust your gut here.</div>
+      <textarea id="q-instinct" placeholder="I imagine someone who..."></textarea>
+    </div>
+
+    <div class="section">
+      <div class="section-label">03 — Yourself</div>
+      <div class="section-question">Describe yourself — your habits, values, what you care about beyond music.</div>
+      <div class="section-hint">Your audience is often a mirror. The more honest you are here, the more accurate the result.</div>
+      <textarea id="q-self" placeholder="Outside of music I tend to..."></textarea>
+    </div>
+
+    <div class="section">
+      <div class="section-label">04 — Your References</div>
+      <div class="section-question">Who are your artistic influences, and who do your current fans remind you of?</div>
+      <div class="section-hint">Artists, films, books, cultural touchstones — anything that lives in the same world as your work.</div>
+      <textarea id="q-refs" placeholder="I'm influenced by... and the people who come to my shows tend to..."></textarea>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="section">
+      <div class="section-label">05 — Optional Photos</div>
+      <div class="section-question">Upload up to four images that feel relevant.</div>
+      <div class="section-hint">Photos of yourself, your aesthetic, your current audience, your visual world — anything that gives texture to who you are and who shows up for you.</div>
+
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="photo-input" accept="image/*" multiple />
+        <div class="upload-icon">⊕</div>
+        <div class="upload-text">Click to add photos — up to 4 images</div>
+      </div>
+      <div class="file-previews" id="file-previews"></div>
+    </div>
+
+    <div class="submit-wrap">
+      <button class="btn-generate" id="btn-generate">Build My Audience</button>
+      <p class="submit-note">Takes about 20–30 seconds.</p>
+      <div class="error-msg" id="error-msg"></div>
+    </div>
+
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="loading-dots">
+      <span></span><span></span><span></span>
+    </div>
+    <p class="loading-message" id="loading-message">Finding the person who needs your music most…</p>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="results-header">
+      <h2>Meet Your Audience</h2>
+      <p>A portrait of the person your music is already for.</p>
+    </div>
+
+    <div class="profile-card" id="profile-card">
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="narrative-block">
+      <div class="block-heading">A Day in Their Life</div>
+      <div class="narrative-text" id="narrative-text"></div>
+    </div>
+
+    <div class="narrative-block">
+      <div class="block-heading">What They're Hiring Your Music To Do</div>
+      <ul class="jobs-list" id="jobs-list"></ul>
+    </div>
+
+    <div class="narrative-block">
+      <div class="block-heading">Where to Find Them</div>
+      <div class="find-grid" id="find-grid"></div>
+    </div>
+
+    <button class="btn-reset" id="btn-reset">Start Over</button>
+  </div>
+
+</div>
+
+<script>
+  const photoInput = document.getElementById('photo-input');
+  const filePreviews = document.getElementById('file-previews');
+  const uploadZone = document.getElementById('upload-zone');
+  const btnGenerate = document.getElementById('btn-generate');
+  const btnReset = document.getElementById('btn-reset');
+  const formSection = document.getElementById('form-section');
+  const loading = document.getElementById('loading');
+  const results = document.getElementById('results');
+  const errorMsg = document.getElementById('error-msg');
+  const loadingMessage = document.getElementById('loading-message');
+
+  let uploadedImages = [];
+
+  const loadingMessages = [
+    'Finding the person who needs your music most…',
+    'Listening between the lines…',
+    'Building a portrait from everything you've shared…',
+    'Almost there — putting the final details in place…'
+  ];
+
+  photoInput.addEventListener('change', () => {
+    const files = Array.from(photoInput.files).slice(0, 4);
+    uploadedImages = [];
+    filePreviews.innerHTML = '';
+    uploadZone.classList.toggle('has-files', files.length > 0);
+
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const base64 = e.target.result.split(',')[1];
+        const mediaType = file.type;
+        uploadedImages.push({ base64, mediaType });
+
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'preview-thumb';
+        filePreviews.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  btnGenerate.addEventListener('click', async () => {
+    const music = document.getElementById('q-music').value.trim();
+    const instinct = document.getElementById('q-instinct').value.trim();
+    const self = document.getElementById('q-self').value.trim();
+    const refs = document.getElementById('q-refs').value.trim();
+
+    if (!music && !instinct) {
+      showError('Please fill in at least the first two questions before continuing.');
+      return;
+    }
+
+    errorMsg.classList.remove('active');
+    btnGenerate.disabled = true;
+    formSection.style.display = 'none';
+    loading.classList.add('active');
+
+    let msgIndex = 0;
+    const msgInterval = setInterval(() => {
+      msgIndex = (msgIndex + 1) % loadingMessages.length;
+      loadingMessage.textContent = loadingMessages[msgIndex];
+    }, 6000);
+
+    try {
+      const userContent = buildUserContent(music, instinct, self, refs);
+      const systemPrompt = buildSystemPrompt();
+
+      const body = {
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userContent }]
+      };
+
+      const resp = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) throw new Error(data.error?.message || 'Something went wrong.');
+
+      const text = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
+      const parsed = parseResponse(text);
+
+      clearInterval(msgInterval);
+      loading.classList.remove('active');
+      renderResults(parsed);
+      results.classList.add('active');
+
+    } catch (err) {
+      clearInterval(msgInterval);
+      loading.classList.remove('active');
+      formSection.style.display = 'block';
+      btnGenerate.disabled = false;
+      showError('Something went wrong: ' + err.message);
+    }
+  });
+
+  btnReset.addEventListener('click', () => {
+    results.classList.remove('active');
+    formSection.style.display = 'block';
+    btnGenerate.disabled = false;
+    document.getElementById('q-music').value = '';
+    document.getElementById('q-instinct').value = '';
+    document.getElementById('q-self').value = '';
+    document.getElementById('q-refs').value = '';
+    uploadedImages = [];
+    filePreviews.innerHTML = '';
+    uploadZone.classList.remove('has-files');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  function showError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.classList.add('active');
+  }
+
+  function buildSystemPrompt() {
+    return `You are a music industry strategist and coach who helps artists identify their Smallest Viable Audience — the specific group of people who will deeply resonate with their work, find meaning in it, and champion it to others.
+
+Your job is to synthesize everything the artist shares about their music, instincts, themselves, and their references — and construct a high-resolution portrait of a single real human being who represents that audience.
+
+This is NOT a demographic checklist. It is a living portrait. The person you describe should feel like someone the artist could actually meet, recognize, and make music for.
+
+Key principles:
+- The audience is often a mirror of the artist. Start there.
+- Narrow and deep beats broad and shallow. Be specific.
+- The goal is clarity and recognition — the artist should feel "yes, that's who I'm making this for."
+- Identify the emotional jobs the music performs for this person (healing, release, escapism, inspiration, nostalgia, belonging, etc.)
+
+Return your response as valid JSON only, with this exact structure:
+{
+  "name": "A realistic first name for this person",
+  "tagline": "A 6-10 word phrase capturing who they are (e.g. 'The quiet searcher who found her voice at 34')",
+  "age": "Age or age range",
+  "location": "Type of place they live — be evocative, not just a city name",
+  "occupation": "What they do — with texture, not just a job title",
+  "personality": "2-3 sentences on who they are as a person. Values, inner life, contradictions.",
+  "aesthetic": "What their world looks, sounds, feels like. What they read, watch, wear, surround themselves with.",
+  "relationship_with_music": "How music functions in their life. When they listen, how they listen, what they need from it.",
+  "narrative": "A day-in-the-life narrative, told in present tense, third person. 3-4 paragraphs. Begin with them waking up and end with them encountering the artist's music. Make it feel real and specific.",
+  "jobs": ["3-5 emotional jobs this person is hiring the music to perform. Each as a single evocative sentence."],
+  "find": [
+    {"label": "Online", "value": "Specific platforms and communities"},
+    {"label": "In Real Life", "value": "Where they physically spend time"},
+    {"label": "Media", "value": "What they read, watch, listen to"},
+    {"label": "Adjacent Artists", "value": "2-3 artists they already love"}
+  ]
+}
+
+Return only the JSON. No preamble, no markdown fences, no explanation.`;
+  }
+
+  function buildUserContent(music, instinct, self, refs) {
+    const parts = [];
+
+    const textPart = {
+      type: 'text',
+      text: `Here is what the artist has shared:\n\n${music ? `THEIR MUSIC:\n${music}\n\n` : ''}${instinct ? `WHO THEY SENSE IT'S FOR:\n${instinct}\n\n` : ''}${self ? `ABOUT THEMSELVES:\n${self}\n\n` : ''}${refs ? `INFLUENCES AND REFERENCES:\n${refs}` : ''}`
+    };
+    parts.push(textPart);
+
+    uploadedImages.forEach(img => {
+      parts.push({
+        type: 'image',
+        source: { type: 'base64', media_type: img.mediaType, data: img.base64 }
+      });
+    });
+
+    return parts;
+  }
+
+  function parseResponse(text) {
+    try {
+      const clean = text.replace(/```json|```/g, '').trim();
+      return JSON.parse(clean);
+    } catch (e) {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) return JSON.parse(match[0]);
+      throw new Error('Could not parse response. Please try again.');
+    }
+  }
+
+  function renderResults(d) {
+    // Profile card
+    document.getElementById('profile-card').innerHTML = `
+      <div class="profile-name">${d.name || 'Your Listener'}</div>
+      <div class="profile-tagline">${d.tagline || ''}</div>
+      <div class="profile-grid">
+        <div class="profile-field"><label>Age</label><p>${d.age || '—'}</p></div>
+        <div class="profile-field"><label>Where They Live</label><p>${d.location || '—'}</p></div>
+        <div class="profile-field"><label>What They Do</label><p>${d.occupation || '—'}</p></div>
+        <div class="profile-field"><label>Their Aesthetic World</label><p>${d.aesthetic || '—'}</p></div>
+        <div class="profile-field" style="grid-column: 1 / -1"><label>Who They Are</label><p>${d.personality || '—'}</p></div>
+        <div class="profile-field" style="grid-column: 1 / -1"><label>Their Relationship With Music</label><p>${d.relationship_with_music || '—'}</p></div>
+      </div>
+    `;
+
+    // Narrative
+    const narrativeParagraphs = (d.narrative || '').split(/\n+/).filter(p => p.trim());
+    document.getElementById('narrative-text').innerHTML = narrativeParagraphs.map(p => `<p>${p}</p>`).join('');
+
+    // Jobs
+    const jobsEl = document.getElementById('jobs-list');
+    jobsEl.innerHTML = (d.jobs || []).map(j => `<li>${j}</li>`).join('');
+
+    // Find grid
+    const findEl = document.getElementById('find-grid');
+    findEl.innerHTML = (d.find || []).map(f => `
+      <div class="find-item">
+        <label>${f.label}</label>
+        <p>${f.value}</p>
+      </div>
+    `).join('');
+  }
+</script>
+</body>
+</html>
