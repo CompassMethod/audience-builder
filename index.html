@@ -142,6 +142,34 @@
       font-style: italic;
     }
 
+    /* Upload pair */
+    .upload-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 560px) {
+      .upload-pair { grid-template-columns: 1fr; }
+    }
+
+    .upload-column-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink);
+      margin-bottom: 5px;
+    }
+
+    .upload-column-hint {
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
     /* Photo upload */
     .upload-zone {
       border: 1px dashed var(--rule);
@@ -550,15 +578,32 @@
 
     <div class="section">
       <div class="section-label">05 — Optional Photos</div>
-      <div class="section-question">Upload up to four images that feel relevant.</div>
-      <div class="section-hint">Photos of yourself, your aesthetic, your current audience, your visual world — anything that gives texture to who you are and who shows up for you.</div>
+      <div class="section-question">Upload images to give your visual world some texture.</div>
+      <div class="section-hint">Two separate windows — one for your overall brand, one for the specific project or release you're working on. The tool will read each on its own terms, and notice how they work together.</div>
 
-      <div class="upload-zone" id="upload-zone">
-        <input type="file" id="photo-input" accept="image/*" multiple />
-        <div class="upload-icon">⊕</div>
-        <div class="upload-text">Click to add photos — up to 4 images</div>
+      <div class="upload-pair">
+        <div class="upload-column">
+          <div class="upload-column-label">General Brand</div>
+          <div class="upload-column-hint">Press shots, artist photos, your overall visual identity — the consistent you.</div>
+          <div class="upload-zone" id="upload-zone-brand">
+            <input type="file" id="photo-input-brand" accept="image/*" multiple />
+            <div class="upload-icon">⊕</div>
+            <div class="upload-text">Up to 4 images</div>
+          </div>
+          <div class="file-previews" id="file-previews-brand"></div>
+        </div>
+
+        <div class="upload-column">
+          <div class="upload-column-label">Project Specific</div>
+          <div class="upload-column-hint">Artwork, mood boards, visuals for a current release — where you're going right now.</div>
+          <div class="upload-zone" id="upload-zone-project">
+            <input type="file" id="photo-input-project" accept="image/*" multiple />
+            <div class="upload-icon">⊕</div>
+            <div class="upload-text">Up to 4 images</div>
+          </div>
+          <div class="file-previews" id="file-previews-project"></div>
+        </div>
       </div>
-      <div class="file-previews" id="file-previews"></div>
     </div>
 
     <div class="submit-wrap">
@@ -609,9 +654,6 @@
 </div>
 
 <script>
-  const photoInput = document.getElementById('photo-input');
-  const filePreviews = document.getElementById('file-previews');
-  const uploadZone = document.getElementById('upload-zone');
   const btnGenerate = document.getElementById('btn-generate');
   const btnReset = document.getElementById('btn-reset');
   const formSection = document.getElementById('form-section');
@@ -620,63 +662,72 @@
   const errorMsg = document.getElementById('error-msg');
   const loadingMessage = document.getElementById('loading-message');
 
-  let uploadedImages = [];
+  let brandImages = [];
+  let projectImages = [];
 
   const loadingMessages = [
     'Finding the person who needs your music most…',
     'Listening between the lines…',
-    'Building a portrait from everything you've shared…',
+    'Building a portrait from everything you\'ve shared…',
     'Almost there — putting the final details in place…'
   ];
 
-  photoInput.addEventListener('change', () => {
-    const files = Array.from(photoInput.files).slice(0, 4);
-    uploadedImages = [];
-    filePreviews.innerHTML = '';
-    uploadZone.classList.toggle('has-files', files.length > 0);
-
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        // Show original as preview thumb
-        const img = document.createElement('img');
-        img.src = e.target.result;
-        img.className = 'preview-thumb';
-        filePreviews.appendChild(img);
-
-        // Compress and convert to JPEG for API
-        const original = new Image();
-        original.onload = () => {
-          const MAX = 800; // max dimension in px — plenty for AI analysis
-          let { width, height } = original;
-          if (width > height && width > MAX) {
-            height = Math.round(height * MAX / width);
-            width = MAX;
-          } else if (height > width && height > MAX) {
-            width = Math.round(width * MAX / height);
-            height = MAX;
-          } else if (width > MAX) {
-            width = height = MAX;
-          }
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          // Fill white background (handles PNG transparency before JPEG conversion)
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, width, height);
-          ctx.drawImage(original, 0, 0, width, height);
-
-          const compressed = canvas.toDataURL('image/jpeg', 0.7);
-          const base64 = compressed.split(',')[1];
-          uploadedImages.push({ base64, mediaType: 'image/jpeg' });
-        };
-        original.src = e.target.result;
+  function compressFile(file, callback) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const original = new Image();
+      original.onload = () => {
+        const MAX = 800;
+        let { width, height } = original;
+        if (width > height && width > MAX) {
+          height = Math.round(height * MAX / width);
+          width = MAX;
+        } else if (height > width && height > MAX) {
+          width = Math.round(width * MAX / height);
+          height = MAX;
+        } else if (width > MAX) {
+          width = height = MAX;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(original, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.7);
+        callback({ base64: compressed.split(',')[1], mediaType: 'image/jpeg', preview: e.target.result });
       };
-      reader.readAsDataURL(file);
+      original.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function setupUploadZone(inputId, zoneId, previewId, store) {
+    const input = document.getElementById(inputId);
+    const zone = document.getElementById(zoneId);
+    const previews = document.getElementById(previewId);
+
+    input.addEventListener('change', () => {
+      const files = Array.from(input.files).slice(0, 4);
+      store.length = 0;
+      previews.innerHTML = '';
+      zone.classList.toggle('has-files', files.length > 0);
+
+      files.forEach(file => {
+        compressFile(file, ({ base64, mediaType, preview }) => {
+          store.push({ base64, mediaType });
+          const img = document.createElement('img');
+          img.src = preview;
+          img.className = 'preview-thumb';
+          previews.appendChild(img);
+        });
+      });
     });
-  });
+  }
+
+  setupUploadZone('photo-input-brand', 'upload-zone-brand', 'file-previews-brand', brandImages);
+  setupUploadZone('photo-input-project', 'upload-zone-project', 'file-previews-project', projectImages);
 
   btnGenerate.addEventListener('click', async () => {
     const music = document.getElementById('q-music').value.trim();
@@ -746,9 +797,12 @@
     document.getElementById('q-instinct').value = '';
     document.getElementById('q-self').value = '';
     document.getElementById('q-refs').value = '';
-    uploadedImages = [];
-    filePreviews.innerHTML = '';
-    uploadZone.classList.remove('has-files');
+    brandImages.length = 0;
+    projectImages.length = 0;
+    document.getElementById('file-previews-brand').innerHTML = '';
+    document.getElementById('file-previews-project').innerHTML = '';
+    document.getElementById('upload-zone-brand').classList.remove('has-files');
+    document.getElementById('upload-zone-project').classList.remove('has-files');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
@@ -763,6 +817,8 @@
 Your job is to synthesize everything the artist shares about their music, instincts, themselves, and their references — and construct a high-resolution portrait of a single real human being who represents that audience.
 
 This is NOT a demographic checklist. It is a living portrait. The person you describe should feel like someone the artist could actually meet, recognize, and make music for.
+
+If general brand photos are provided, use them to understand the artist's established visual identity and the kind of person already drawn to that world. If project-specific photos are provided, use them to understand where the artist is going with this particular release. If both are provided, note whether they are in harmony or in tension — and let that inform the portrait of the listener.
 
 Key principles:
 - The audience is often a mirror of the artist. Start there.
@@ -796,17 +852,26 @@ Return only the JSON. No preamble, no markdown fences, no explanation.`;
   function buildUserContent(music, instinct, self, refs) {
     const parts = [];
 
-    const textPart = {
-      type: 'text',
-      text: `Here is what the artist has shared:\n\n${music ? `THEIR MUSIC:\n${music}\n\n` : ''}${instinct ? `WHO THEY SENSE IT'S FOR:\n${instinct}\n\n` : ''}${self ? `ABOUT THEMSELVES:\n${self}\n\n` : ''}${refs ? `INFLUENCES AND REFERENCES:\n${refs}` : ''}`
-    };
-    parts.push(textPart);
+    let text = `Here is what the artist has shared:\n\n`;
+    if (music) text += `THEIR MUSIC:\n${music}\n\n`;
+    if (instinct) text += `WHO THEY SENSE IT'S FOR:\n${instinct}\n\n`;
+    if (self) text += `ABOUT THEMSELVES:\n${self}\n\n`;
+    if (refs) text += `INFLUENCES AND REFERENCES:\n${refs}\n\n`;
+    if (brandImages.length) text += `GENERAL BRAND PHOTOS: ${brandImages.length} image(s) follow — these represent the artist's established visual identity.\n\n`;
+    if (projectImages.length) text += `PROJECT-SPECIFIC PHOTOS: ${projectImages.length} image(s) follow — these represent the visual direction of a current release.\n\n`;
 
-    uploadedImages.forEach(img => {
-      parts.push({
-        type: 'image',
-        source: { type: 'base64', media_type: img.mediaType, data: img.base64 }
-      });
+    parts.push({ type: 'text', text });
+
+    brandImages.forEach(img => {
+      parts.push({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.base64 } });
+    });
+
+    if (brandImages.length && projectImages.length) {
+      parts.push({ type: 'text', text: 'The following images are PROJECT-SPECIFIC — for the current release:' });
+    }
+
+    projectImages.forEach(img => {
+      parts.push({ type: 'image', source: { type: 'base64', media_type: img.mediaType, data: img.base64 } });
     });
 
     return parts;
