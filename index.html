@@ -758,15 +758,17 @@
     const zone = document.getElementById(zoneId);
     const previews = document.getElementById(previewId);
     input.addEventListener('change', () => {
-      const files = Array.from(input.files).slice(0, 4);
-      store.length = 0; previews.innerHTML = '';
-      zone.classList.toggle('has-files', files.length > 0);
+      const remaining = 4 - store.length;
+      if (remaining <= 0) return;
+      const files = Array.from(input.files).slice(0, remaining);
+      input.value = '';
       files.forEach(file => {
         compressFile(file, ({ base64, mediaType, preview }) => {
           store.push({ base64, mediaType });
           const img = document.createElement('img');
           img.src = preview; img.className = 'preview-thumb';
           previews.appendChild(img);
+          zone.classList.add('has-files');
         });
       });
     });
